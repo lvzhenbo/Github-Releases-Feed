@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex items-center justify-center">
+  <div class="h-full flex items-center justify-center">
     <div>
       <NCard title="GitHub Token" hoverable class="!w-[600px]">
         <NInputGroup>

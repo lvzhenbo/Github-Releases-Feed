@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-center">
+  <div class="flex justify-center h-full">
     <NProgress
       type="line"
       :percentage
@@ -7,7 +7,7 @@
       processing
       v-if="!showedList.length"
     />
-    <NInfiniteScroll class="!h-screen !w-[800px]" :distance="10" @load="handleLoad" v-else>
+    <NInfiniteScroll class="!h-full !w-[800px]" :distance="10" @load="handleLoad" v-else>
       <div class="p-4" v-for="item in showedList" :key="item.id">
         <NCard hoverable size="small">
           <template #header>
@@ -37,7 +37,7 @@
           <NA :href="item.releaseUrl" target="_blank" class="underline text-2xl">
             {{ item.name }}
           </NA>
-          <div v-html="item.body" class="custom-theme custom-theme-light mt-4"> </div>
+          <div v-html="item.body" class="custom-theme mt-4" :class="contentTheme"> </div>
         </NCard>
       </div>
     </NInfiniteScroll>
@@ -65,6 +65,7 @@
     ownerUrl: string;
   }
 
+  const osThemeRef = useOsTheme();
   const octokit = new Octokit({
     auth: useTokenStore().token,
   });
@@ -77,6 +78,9 @@
       return 0;
     }
     return Math.trunc((repoList.value.length / total.value) * 100);
+  });
+  const contentTheme = computed(() => {
+    return osThemeRef.value === 'dark' ? 'custom-theme-dark' : 'custom-theme-light';
   });
 
   onMounted(() => {
@@ -125,13 +129,15 @@
       repoList.value.push(...res.viewer.starredRepositories.nodes);
     }
     for (const repo of repoList.value) {
-      await getRelease(repo);
+      getRelease(repo);
     }
-    // console.log(releaseList.value);
+    releaseList.value.sort((a, b) => {
+      return new Date(b.publishedTime).getTime() - new Date(a.publishedTime).getTime();
+    });
     showedList.value = releaseList.value.slice(0, 10);
   };
 
-  const getRelease = async (repo: StarredRepositoriesNode) => {
+  const getRelease = (repo: StarredRepositoriesNode) => {
     if (repo.releases.nodes.length > 0) {
       for (const release of repo.releases.nodes) {
         releaseList.value.push({
@@ -154,9 +160,6 @@
           ownerUrl: repo.owner.url,
         });
       }
-      releaseList.value.sort((a, b) => {
-        return new Date(b.publishedTime).getTime() - new Date(a.publishedTime).getTime();
-      });
     }
   };
 
